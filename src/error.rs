@@ -1,3 +1,8 @@
+#[cfg(feature = "axum")]
+use axum_core::response::{IntoResponse, Response};
+#[cfg(feature = "axum")]
+use http::StatusCode;
+
 use core::fmt;
 
 #[cfg(feature = "alloc")]
@@ -102,5 +107,12 @@ impl fmt::Display for Error {
             write!(f, "unspecified error")?;
         }
         Ok(())
+    }
+}
+
+#[cfg(feature = "axum")]
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()).into_response()
     }
 }

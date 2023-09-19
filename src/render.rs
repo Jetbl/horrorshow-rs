@@ -3,6 +3,11 @@ use core::fmt;
 #[cfg(feature = "alloc")]
 use alloc::{boxed::Box, string::String};
 
+#[cfg(feature = "axum")]
+use axum_core::response::{IntoResponse, Response};
+#[cfg(feature = "axum")]
+use http::{header, HeaderMap, HeaderValue};
+
 use crate::template::{Template, TemplateBuffer};
 
 /// Something that can be rendered once.
@@ -276,6 +281,26 @@ where
 {
     fn render(&self, tmpl: &mut TemplateBuffer<'_>) {
         (self.renderer)(tmpl)
+    }
+}
+
+#[cfg(feature = "axum")]
+impl<F> IntoResponse for FnRenderer<F>
+where
+    Self: Template,
+{
+    fn into_response(self) -> Response {
+        match self.into_string() {
+            Ok(s) => {
+                let mut headers = HeaderMap::new();
+                headers.insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static("text/html; charset=utf-8"),
+                );
+                (headers, s).into_response()
+            }
+            Err(e) => e.into_response(),
+        }
     }
 }
 
